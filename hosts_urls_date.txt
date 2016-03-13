@@ -1,2 +1,3 @@
 http://laod.cn/hosts/2016-google-hosts.html
-0000-00-00
+date:00000000
+version:0
