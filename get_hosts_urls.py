@@ -23,7 +23,7 @@ def get_hosts_urls():
             
         file_hosts_urls.close()
         return (address,update_date)
-    except:
+    except Exception, e:
         print '读取hosts_urls.txt失败'
         return None
 
