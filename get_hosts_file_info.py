@@ -32,7 +32,7 @@ class HTTPClient:
 
         # Prepare header
         http.putrequest("GET", path)
-        http.putheader("User-Agent", __file__)
+        http.putheader("User-Agent", 'Mozilla')
         http.putheader("Host", self.host)
         http.putheader("Accept", "*/*")
         http.endheaders()
@@ -59,13 +59,14 @@ def get_hosts_file_info1(hosts_address):
     
 def get_hosts_file_info(hosts_address):
     (baiduwp_address,baiduwp_passwd,\
-    zipfile_passwd,hostsfile_update_date) =('','','','')
+    zipfile_passwd,hostsfile_update_date,hostsfile_update_version) =('','','','',0)
     try:
         html_content=urllib2.urlopen(hosts_address,timeout=100).read()
         #print html_content
+        #html_content=open('1.txt','r').read()
     except Exception, e:
         print e
-        return ('','','','')
+        return ('','','','',0)
 #从content中获取信息
     try:
         soup_re = BeautifulSoup(html_content,"lxml")
@@ -80,13 +81,16 @@ def get_hosts_file_info(hosts_address):
                     for href in tagsobjects.find_all('a'):
                         if href['href'].find('baidu')!=-1:
                             baiduwp_address=href['href'] #获得了baidu微盘的地址额
-                            re_num = r'\w*[0-9]+\w*'
-                            hostsfile_update_date=re.findall(re_num,href.get_text())[0]
+                            re_num = r'[0-9]+'
+                            date_list=re.findall(re_num,href.get_text())
+                            print date_list
+                            hostsfile_update_date=date_list[0]
+                            hostsfile_update_version=int(date_list[1])
                             #print hostsfile_update_date
                     break
     except Exception,e:
         print e          #有可能会超时，这是需要注意的问题
-        return ('','','','')
+        return ('','','','',0)
 #获取了对应的字符串，可以获得日期，提取码，解压密码
 #test 百度网盘 20160311-hosts下载 提取码 ：jtr5  解码密码：jubaonimabi腾讯微云 20160311-hosts下载 提取码 ：jH6D  解码密码：jubaonimabi 0
 #测试的时候还是应该进行单元测试
@@ -95,7 +99,7 @@ def get_hosts_file_info(hosts_address):
     baiduwp_passwd=result_list[4]
     zipfile_passwd=result_list[6]
     
-    return (baiduwp_address,baiduwp_passwd,zipfile_passwd,hostsfile_update_date)
+    return (baiduwp_address,baiduwp_passwd,zipfile_passwd,hostsfile_update_date,hostsfile_update_version)
 
 
 if __name__=='__main__':
