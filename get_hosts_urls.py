@@ -3,11 +3,11 @@
 '''
 读取hosts_urls.txt来获得url地址
 '''
-config_file='hosts_urls_date.txt'
+CONFIG_FILE='hosts_urls_date.txt'
 
 def get_hosts_urls():
     try:
-        file_hosts_urls = open(config_file,'rU')
+        file_hosts_urls = open(CONFIG_FILE,'rU')
         address = file_hosts_urls.readline()
         if address==None or address==[]:
             print '读取hosts_urls.txt结果为空'
