@@ -58,13 +58,14 @@ def download_hosts_zip_file(baiduwp_address,baiduwp_passwd,hosts_dir_name):
     
     #可能需要构造特殊的cookie    
     cookie=cookielib.MozillaCookieJar()
-    cookie.load('cookies.txt',ignore_discard=True,ignore_expires=True)
+    cookie.load('cookies.dat',ignore_discard=True,ignore_expires=True)
 
     handler=urllib2.HTTPCookieProcessor(cookie)
     
+    req=urllib2.Request(baiduwp_address)
     opener = urllib2.build_opener(handler)
     opener.addheaders = headers
-    data = opener.open(baiduwp_address).read()
+    data = opener.open(req).read()
     for item in cookie:
         print 'Name = '+item.name
         print 'Value = '+item.value
