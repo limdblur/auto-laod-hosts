@@ -4,6 +4,7 @@ import urllib2
 import urlparse
 import requests
 import httplib
+import cookielib
 
 class HTTPClient:
 
@@ -41,7 +42,8 @@ def get_hosts_file_info1(hosts_address):
     print content
     
 def download_hosts_zip_file(baiduwp_address,baiduwp_passwd,hosts_dir_name):
-    #step 0：短url的处理,baidu网盘估计禁止爬虫，那么可以模拟浏览器 
+    #step 0：短url的处理,baidu网盘估计禁止爬虫，那么可以模拟浏览器，需要cookie
+   
     parse_re = urlparse.urlparse(baiduwp_address)
     hosts = parse_re.netloc
     print hosts
@@ -53,10 +55,20 @@ def download_hosts_zip_file(baiduwp_address,baiduwp_passwd,hosts_dir_name):
     ('Accept-Encoding','gzip,deflate'),
     ('Accept-Language', 'en-US,en;q=0.5'),
     ('Referer','http://laod.cn/hosts/2016-google-hosts.html')]
-    #可能需要构造特殊的cookie
-    opener = urllib2.build_opener()
+    
+    #可能需要构造特殊的cookie    
+    cookie=cookielib.MozillaCookieJar()
+    cookie.load('cookies.txt',ignore_discard=True,ignore_expires=True)
+
+    handler=urllib2.HTTPCookieProcessor(cookie)
+    
+    opener = urllib2.build_opener(handler)
     opener.addheaders = headers
     data = opener.open(baiduwp_address).read()
+    for item in cookie:
+        print 'Name = '+item.name
+        print 'Value = '+item.value
+        
     print data
     #step 1：是否需要处理cookie
     #输入提取码
@@ -75,4 +87,5 @@ if __name__=='__main__':
                                                     'http://pan.baidu.com/s/1nu0OV3N',\
                                                     'hsmi',\
                                                     '20160311-v3'
+    #baiduwp_address='http://pan.baidu.com'
     download_hosts_zip_file(baiduwp_address,baiduwp_passwd,hosts_dir_name)
