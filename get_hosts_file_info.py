@@ -1,7 +1,7 @@
 #!/usr/bin/python
 #encoding:utf-8
 import httplib
-import urlparse
+
 import urllib2
 from bs4 import BeautifulSoup
 import re
@@ -21,52 +21,17 @@ urlparse.urlparse对url字符拆分成各个部件
 url的结构是这样的：
 协议://授权/路径;参数?连接符#拆分文档中的特殊锚
 '''
-
-class HTTPClient:
-
-    def __init__(self, host):
-        self.host = host
-
-    def fetch(self, path):
-        http = httplib.HTTP(self.host)
-
-        # Prepare header
-        http.putrequest("GET", path)
-        http.putheader("User-Agent", 'Mozilla')
-        http.putheader("Host", self.host)
-        http.putheader("Accept", "*/*")
-        http.endheaders()
-
-        try:
-            errcode, errmsg, headers = http.getreply()
-
-        except Exception, e:
-                print "Client failed error code: %s message:%s headers:%s" %(errcode, errmsg, headers)
-        else: 
-            print "Got homepage from %s" %self.host 
-
-        file = http.getfile()
-        return file.read()
-    
-def get_hosts_file_info1(hosts_address):
-    parse_re = urlparse.urlparse(hosts_address)
-    hosts = parse_re.netloc
-    path=parse_re.path
-    #print hosts,path
-    client = HTTPClient(hosts)
-    content = client.fetch(path)
-    print content
     
 def get_hosts_file_info(hosts_address):
-    (baiduwp_address,baiduwp_passwd,\
-    zipfile_passwd,hostsfile_update_date,hostsfile_update_version) =('','','','',0)
+    (baiduwp_address,baiduwp_passwd,hosts_dir_name,\
+    zipfile_passwd,hostsfile_update_date,hostsfile_update_version) =('','','','','',0)
     try:
         html_content=urllib2.urlopen(hosts_address,timeout=100).read()
         #print html_content
         #html_content=open('1.txt','r').read()
     except Exception, e:
         print e
-        return ('','','','',0)
+        return ('','','','','',0)
 #从content中获取信息
     try:
         soup_re = BeautifulSoup(html_content,"lxml")
@@ -90,16 +55,26 @@ def get_hosts_file_info(hosts_address):
                     break
     except Exception,e:
         print e          #有可能会超时，这是需要注意的问题
-        return ('','','','',0)
+        return ('','','','','',0)
 #获取了对应的字符串，可以获得日期，提取码，解压密码
 #test 百度网盘 20160311-hosts下载 提取码 ：jtr5  解码密码：jubaonimabi腾讯微云 20160311-hosts下载 提取码 ：jH6D  解码密码：jubaonimabi 0
 #测试的时候还是应该进行单元测试
     re_splits=u'[： ]'
     result_list=re.split(re_splits,strings_we_want)
+    #print result_list
     baiduwp_passwd=result_list[4]
     zipfile_passwd=result_list[6]
-    
-    return (baiduwp_address,baiduwp_passwd,zipfile_passwd,hostsfile_update_date,hostsfile_update_version)
+    #获取hosts_dir_name
+    sep1_bdwp=strings_we_want.split(u'百度网盘')
+    #print sep1_bdwp
+    sep2_xz=sep1_bdwp[1].split(u'下载')[0]
+    #print sep2_xz
+    #消除前导空格与末尾空格
+    remove_headblank=sep2_xz.lstrip(' ')
+    remove_tailblank=remove_headblank.rstrip(' ')
+    hosts_dir_name=remove_tailblank
+    print hosts_dir_name
+    return (baiduwp_address,baiduwp_passwd,hosts_dir_name,zipfile_passwd,hostsfile_update_date,hostsfile_update_version)
 
 
 if __name__=='__main__':
