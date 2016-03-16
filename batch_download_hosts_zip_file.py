@@ -142,14 +142,6 @@ def download_hosts_zip_file(baiduwp_address,baiduwp_passwd,hosts_dir_name):
     #first_opener.addheaders = headers #更新头部
     #req2=urllib2.Request(referer2)
     #输入提取码
-    url2='http://pcs.baidu.com/rest/2.0/pcs/file?method=plantcookie&type=ett'
-    req2=urllib2.Request(url2)
-    #first_opener.addheaders = headers
-    first_opener.open(req2)
-    cookie.save(ignore_discard=True,ignore_expires=True)
-    for item in cookie:
-        print 'Name = '+item.name
-        print 'Value = '+item.value
 
     data={'pwd':baiduwp_passwd,'vcode':''}
     data_encode=urllib.urlencode(data)
@@ -171,98 +163,64 @@ def download_hosts_zip_file(baiduwp_address,baiduwp_passwd,hosts_dir_name):
 
     js = _get_js(first_opener,baiduwp_address, baiduwp_passwd)
     print js
-
+    cookie.save(ignore_discard=True,ignore_expires=True)
+	
     info=ShareInfo()
     if info.match(js):
-        print info.filename
-        if info.sharepagetype == DLTYPE_MULTIPLE:
-            print info.fileinfo
-            dirname=info.fileinfo[u'path']
-            print dirname
-        url4="{0}&".format(referer2.replace('init','list'))
-        data_get_req={
-            'dir':dirname,
-            'page':1
-            }
-        data_get_req_encode=urllib.urlencode(data_get_req)
-        url4+=data_get_req_encode
-        print url4
-        req4=urllib2.Request(url4)
-        returned_filelistinfo=json.loads(first_opener.open(req4).read())
+        url2='http://pcs.baidu.com/rest/2.0/pcs/file?method=plantcookie&type=ett'
+        req2=urllib2.Request(url2)
+        #first_opener.addheaders = headers
+        first_opener.open(req2)
+        cookie.save(ignore_discard=True,ignore_expires=True)
         for item in cookie:
             print 'Name = '+item.name
             print 'Value = '+item.value
-        errno=returned_filelistinfo[u'errno']
-        zipped_filename=privateutil.get_the_zipped_hosts_filename()
-        print zipped_filename
-        if errno==0: #返回目录下的文件列表
-            #打开新的网页http://pan.baidu.com/share/link?shareid=1539947020&uk=3171722477#path=%252F20160311-v3
-            url_enter_dir=url4="{0}#".format(referer2.replace('init','link'))
-            data_in_url={
-                'path':u'%/'+info.fileinfo['server_filename']
-                }
-            data_in_url_encode=urllib.urlencode(data_in_url)
-            url_enter_dir+=data_in_url_encode
-            print url_enter_dir
+        #get SHARE_ID,SEKEY,SIGN,SHARE_UK
 
-            js_enter_dir = _get_js(first_opener,url_enter_dir, baiduwp_passwd)
-            print js_enter_dir
-
-            info_enter_dir=ShareInfo()
-            if info_enter_dir.match(js_enter_dir):
-                #get SHARE_ID,SEKEY,SIGN,SHARE_UK
-                share_id=info_enter_dir.share_id
-                share_uk=info_enter_dir.uk
-                sign=info_enter_dir.sign
-                print 'sign is',sign
-                sekey=info_enter_dir.sekey #暂时为None
-                sekey='{"sekey":"%s"}' % (url_unquote(u'f9ciJq7HsoXeVjfiJjgrYn%2FppjvK7p8uETVQzEZBfxQ%3D')),
-                timestamp=info_enter_dir.timestamp
-                bdstoken=info_enter_dir.bdstoken
-
-                #server_filename
-                #fs_id
-                filelistinfo=returned_filelistinfo[u'list']
-                for eachfileinfo in filelistinfo:
-                    if eachfileinfo['server_filename']==zipped_filename:
-                        fid_list=[eachfileinfo['fs_id']]
-                        print 'fid_list is',fid_list
-                url5='http://pan.baidu.com/api/sharedownload?'
-                data_get_req={
-                    'sign':sign,
-                    'timestamp':timestamp,
-                    'bdstoken':bdstoken,
-                    'app_id':250528,
-                    'web':1,
-                    'clienttype':0
-                    }
-                data_get_req_encode=urllib.urlencode(data_get_req)
-                print 'data_get',data_get_req
-                url5+=data_get_req_encode
-                print 'url5 is',url5
-                data_post={
-                    'encrypt':'0',
-                    'extra':sekey,
-                    'fid_list':fid_list,
-                    'product':'share',
-                    'primaryid':share_id,
-                    'uk':share_uk
-                    }
-                data_post_encode=urllib.urlencode(data_post)
-                print 'data_post',data_post
-                req5=urllib2.Request(url5,data_post_encode)
-                returned_info=first_opener.open(req5).read()
-                for item in cookie:
-                    print 'Name = '+item.name
-                    print 'Value = '+item.value
-                print returned_info
-                returned_jsoninfo=json.loads(returned_info)
-                print '返回值',returned_jsoninfo
-                if returned_jsoninfo['errno']==0:
-                    download_link=returned_jsoninfo[u'dlink']
-                    print 'dlink is',download_link
-                else:
-                    print 'errno is',returned_jsoninfo['errno']
+        share_id=info.share_id
+        share_uk=info.uk
+        sign=info.sign
+        print 'sign is',sign
+        sekey=info.sekey #暂时为None
+        sekey='{"sekey":"%s"}' % (url_unquote(u'f9ciJq7HsoXeVjfiJjgrYn%2FppjvK7p8uETVQzEZBfxQ%3D')),
+        fid_list=info.fid_list
+        timestamp=info.timestamp
+        bdstoken=info.bdstoken
+        
+        url5='http://pan.baidu.com/api/sharedownload?'
+        data_get_req={
+            'sign':sign,
+            'timestamp':timestamp,
+            'bdstoken':bdstoken,
+            'type':'batch'
+            }
+        data_get_req_encode=urllib.urlencode(data_get_req)
+        print 'data_get',data_get_req
+        url5+=data_get_req_encode
+        print 'url5 is',url5
+        data_post={
+            'encrypt':'0',
+            'extra':sekey,
+            'fid_list':fid_list,
+            'product':'share',
+            'primaryid':share_id,
+            'uk':share_uk
+            }
+        data_post_encode=urllib.urlencode(data_post)
+        print 'data_post',data_post
+        req5=urllib2.Request(url5,data_post_encode)
+        returned_info=first_opener.open(req5).read()
+        for item in cookie:
+            print 'Name = '+item.name
+            print 'Value = '+item.value
+        print returned_info
+        returned_jsoninfo=json.loads(returned_info)
+        print '返回值',returned_jsoninfo
+        if returned_jsoninfo['errno']==0:
+            download_link=returned_jsoninfo[u'dlink']
+            print 'dlink is',download_link
+        else:
+            print 'errno is',returned_jsoninfo['errno']
     #step 2：是否需要处理cookie
     #进入下一级目录
 

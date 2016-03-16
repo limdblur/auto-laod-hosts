@@ -4,18 +4,10 @@ import subprocess
 import shlex
 import platform
 import os
+import privateutil
 '''
 解压zip文件
 '''
-def get_the_zipped_hosts_filename():
-    system=platform.system()
-    if system=='Linux':
-        zipped_hosts_filename='Android安卓跟Linux系列.zip'
-    else:
-        zipped_hosts_filename='Windows系列跟苹果系列.zip'
-
-    return zipped_hosts_filename
-
 def is_unzip_exists():
     try:
         if subprocess.call('unzip')==0:
@@ -39,5 +31,6 @@ def unzip_zipped_hosts_file(zippedfilename,passwd):
         return False
    
 if __name__=='__main__':
-    zipped_hosts_filename=get_the_zipped_hosts_filename()
-    unzip_zipped_hosts_file(zipped_hosts_filename,'nite')
+    zipped_hosts_filename=privateutil.get_the_zipped_hosts_filename()
+    print zipped_hosts_filename
+    #unzip_zipped_hosts_file(zipped_hosts_filename,'nite')
