@@ -216,7 +216,7 @@ def download_hosts_zip_file(baiduwp_address,baiduwp_passwd,hosts_dir_name):
                 sign=info_enter_dir.sign
                 print 'sign is',sign
                 sekey=info_enter_dir.sekey #暂时为None
-                sekey='{"sekey":"%s"}' % (url_unquote(u'f9ciJq7HsoXeVjfiJjgrYn%2FppjvK7p8uETVQzEZBfxQ%3D')),
+                sekey='{"sekey":"%s"}' % (url_unquote(u'f9ciJq7HsoXeVjfiJjgrYn%2FppjvK7p8uETVQzEZBfxQ%3D'))
                 timestamp=info_enter_dir.timestamp
                 bdstoken=info_enter_dir.bdstoken
 

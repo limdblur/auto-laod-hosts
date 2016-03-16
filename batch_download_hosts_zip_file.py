@@ -182,7 +182,7 @@ def download_hosts_zip_file(baiduwp_address,baiduwp_passwd,hosts_dir_name):
         sign=info.sign
         print 'sign is',sign
         sekey=info.sekey #暂时为None
-        sekey='{"sekey":"%s"}' % (url_unquote(u'f9ciJq7HsoXeVjfiJjgrYn%2FppjvK7p8uETVQzEZBfxQ%3D')),
+        sekey='{"sekey":"%s"}' % (url_unquote(u'f9ciJq7HsoXeVjfiJjgrYn%2FppjvK7p8uETVQzEZBfxQ%3D'))
         fid_list=info.fid_list
         timestamp=info.timestamp
         bdstoken=info.bdstoken
