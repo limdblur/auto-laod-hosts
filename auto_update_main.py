@@ -22,11 +22,13 @@ def main():
         if is_google_connect.is_network_connected()==True:
             #看来是hosts文件需要更新了
             
+            #(baiduwp_address,baiduwp_passwd,hosts_dir_name,\
+            # zipfile_passwd,hostsfile_update_date,\
+            # hostsfile_update_version)=\
+            # get_hosts_file_info.get_remote_hosts_file_info(privateutil.get_hosts_urls())
             (baiduwp_address,baiduwp_passwd,hosts_dir_name,\
              zipfile_passwd,hostsfile_update_date,\
-             hostsfile_update_version)=\
-             get_hosts_file_info.get_remote_hosts_file_info(privateutil.get_hosts_urls())
-
+             hostsfile_update_version)=('http://pan.baidu.com/s/1nu0OV3N','hsmi','20160311-v3','zuile','20160311',3)
             if baiduwp_address!='':
                 #获取成功
                 if int(hostsfile_update_date)>int(origin_hostsfile_update_date) or\
@@ -39,11 +41,11 @@ def main():
                         result_unzip=unzip_hosts_zip_file.unzip_zipped_hosts_file(zipped_hosts_filename,zipfile_passwd)
                         if result_unzip==True:
                             #解压缩成功
-                            result_update_hosts=update_origin_hosts_file()
+                            result_update_hosts=update_origin_hosts_file.update_origin_hosts_file()
                             if result_update_hosts==True:
                                 #更新文件成功
                                 #更新配置文件，必须成功
-                                update_the_config_file(hostsfile_update_date,hostsfile_update_version)
+                                privateutil.update_the_config_file(hostsfile_update_date,hostsfile_update_version)
                                 #删除zip文件和hosts文件
                                 privateutil.clean_downloads()
                                 return True

@@ -55,3 +55,4 @@ def is_google_connected():
 if __name__=='__main__':
     is_network_connected()
     is_google_connected()
+    pass

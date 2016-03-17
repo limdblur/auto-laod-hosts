@@ -24,7 +24,9 @@ def input_vcode(image_file):
 
     #open JPG file
     #http://stackoverflow.com/questions/23901168/how-do-i-insert-a-jpeg-image-into-a-python-tkinter-window
-    vcode_image_object=ImageTk.PhotoImage(Image.open(image_file))
+    fp=open(image_file,'rb')
+    vcode_image_object=ImageTk.PhotoImage(Image.open(fp))
+    fp.close()
     
         
     #var=Tkinter.StringVar() #StringaVar()是Tkinter预定义的
@@ -40,7 +42,7 @@ def input_vcode(image_file):
     def set_global_vcode():
         global global_vcode
         global_vcode=label_vcode_text.get()
-        top.quit()
+        top.destroy()
         
     ok_button=Tkinter.Button(bottomframe,text=u'OK',command=set_global_vcode) #点击button后设置global_vcode
 
@@ -51,7 +53,7 @@ def input_vcode(image_file):
 
 
 if __name__=='__main__':
-    #vcode_image_file=u'vcode.jpg'
-    #input_vcode(vcode_image_file)
+    vcode_image_file=u'vcode.jpg'
+    input_vcode(vcode_image_file)
     #input_vcode()
     pass
