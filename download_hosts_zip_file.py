@@ -11,6 +11,9 @@ import re
 import json
 import os
 import privateutil
+import the_gui
+import shlex
+import subprocess
 try:
     from urllib import unquote as url_unquote
 except ImportError:
@@ -151,26 +154,35 @@ def download_hosts_zip_file(baiduwp_address,baiduwp_passwd,hosts_dir_name):
         print 'Name = '+item.name
         print 'Value = '+item.value
 
-    data={'pwd':baiduwp_passwd,'vcode':''}
-    data_encode=urllib.urlencode(data)
-    print data_encode
+    data_post3={'pwd':baiduwp_passwd,'vcode':'','vcode_str':''}
+    data_post3_encode=urllib.urlencode(data_post3)
+    print data_post3_encode
     url3="{0}&t={1}&".format(referer2.replace('init','verify'),str(int(time())))
-    print url3
-    req3=urllib2.Request(url3,data_encode)
+    print 'url3 is',url3
+    req3=urllib2.Request(url3,data_post3_encode)
     jsonmsg=json.loads(first_opener.open(req3).read())
     cookie.save(ignore_discard=True,ignore_expires=True)
-    for item in cookie:
-        print 'Name = '+item.name
-        print 'Value = '+item.value
+
     print jsonmsg,type(jsonmsg) #got request_id
     errno=jsonmsg['errno']
     if errno == -63:
-        print 'UnknownError'
+        print '提取密码遇到要输入验证码'
+        while True:
+            errno=yanzhengmashuru(first_opener,baiduwp_passwd,referer2)
+            if errno==0:
+                break
+        
     elif errno == -9:
         print 'VerificationError("提取密码错误\n")'
+        raise UnknowError
+    elif errno == 0:
+        pass
+    else:
+        print '提取密码遇到UnknownError'
+        raise UnknowError        
 
     js = _get_js(first_opener,baiduwp_address, baiduwp_passwd)
-    print js
+    #print js
 
     info=ShareInfo()
     if info.match(js):
@@ -179,99 +191,188 @@ def download_hosts_zip_file(baiduwp_address,baiduwp_passwd,hosts_dir_name):
             print info.fileinfo
             dirname=info.fileinfo[u'path']
             print dirname
-        url4="{0}&".format(referer2.replace('init','list'))
+        url4="{0}&".format(referer2.replace('init','list')) #返回目录下的文件列表
         data_get_req={
             'dir':dirname,
             'page':1
             }
         data_get_req_encode=urllib.urlencode(data_get_req)
         url4+=data_get_req_encode
-        print url4
+        print 'url4 is',url4
         req4=urllib2.Request(url4)
         returned_filelistinfo=json.loads(first_opener.open(req4).read())
-        for item in cookie:
-            print 'Name = '+item.name
-            print 'Value = '+item.value
+
         errno=returned_filelistinfo[u'errno']
-        zipped_filename=privateutil.get_the_zipped_hosts_filename()
+        zipped_filename=privateutil.get_the_zipped_hosts_filename() #获取对应系统平台的文件名字
         print zipped_filename
-        if errno==0: #返回目录下的文件列表
-            #打开新的网页http://pan.baidu.com/share/link?shareid=1539947020&uk=3171722477#path=%252F20160311-v3
-            url_enter_dir=url4="{0}#".format(referer2.replace('init','link'))
-            data_in_url={
-                'path':u'%/'+info.fileinfo['server_filename']
+        if errno==0:
+            #get SHARE_ID,SEKEY,SIGN,SHARE_UK
+            share_id=info.share_id
+            share_uk=info.uk
+            sign=info.sign
+            print 'sign is',sign
+            sekey=info.sekey #暂时为None
+            sekey='{"sekey":"%s"}' % (url_unquote(u'f9ciJq7HsoXeVjfiJjgrYn%2FppjvK7p8uETVQzEZBfxQ%3D'))
+            timestamp=info.timestamp
+            bdstoken=info.bdstoken
+
+            #server_filename
+            #fs_id
+            filelistinfo=returned_filelistinfo[u'list']
+            for eachfileinfo in filelistinfo:
+                if eachfileinfo['server_filename']==zipped_filename:
+                    fid_list=[eachfileinfo['fs_id']]
+                    print 'fid_list is',fid_list
+            url5='http://pan.baidu.com/api/sharedownload?'
+            data_get_req5={
+                'sign':sign,
+                'timestamp':timestamp,
+                'bdstoken':bdstoken,
                 }
-            data_in_url_encode=urllib.urlencode(data_in_url)
-            url_enter_dir+=data_in_url_encode
-            print url_enter_dir
-
-            js_enter_dir = _get_js(first_opener,url_enter_dir, baiduwp_passwd)
-            print js_enter_dir
-
-            info_enter_dir=ShareInfo()
-            if info_enter_dir.match(js_enter_dir):
-                #get SHARE_ID,SEKEY,SIGN,SHARE_UK
-                share_id=info_enter_dir.share_id
-                share_uk=info_enter_dir.uk
-                sign=info_enter_dir.sign
-                print 'sign is',sign
-                sekey=info_enter_dir.sekey #暂时为None
-                sekey='{"sekey":"%s"}' % (url_unquote(u'f9ciJq7HsoXeVjfiJjgrYn%2FppjvK7p8uETVQzEZBfxQ%3D'))
-                timestamp=info_enter_dir.timestamp
-                bdstoken=info_enter_dir.bdstoken
-
-                #server_filename
-                #fs_id
-                filelistinfo=returned_filelistinfo[u'list']
-                for eachfileinfo in filelistinfo:
-                    if eachfileinfo['server_filename']==zipped_filename:
-                        fid_list=[eachfileinfo['fs_id']]
-                        print 'fid_list is',fid_list
-                url5='http://pan.baidu.com/api/sharedownload?'
-                data_get_req={
-                    'sign':sign,
-                    'timestamp':timestamp,
-                    'bdstoken':bdstoken,
-                    'app_id':250528,
-                    'web':1,
-                    'clienttype':0
-                    }
-                data_get_req_encode=urllib.urlencode(data_get_req)
-                print 'data_get',data_get_req
-                url5+=data_get_req_encode
-                print 'url5 is',url5
-                data_post={
-                    'encrypt':'0',
-                    'extra':sekey,
-                    'fid_list':fid_list,
-                    'product':'share',
-                    'primaryid':share_id,
-                    'uk':share_uk
-                    }
-                data_post_encode=urllib.urlencode(data_post)
-                print 'data_post',data_post
-                req5=urllib2.Request(url5,data_post_encode)
+            data_get_req5_encode=urllib.urlencode(data_get_req5)
+            print 'data_get',data_get_req5
+            url5+=data_get_req5_encode
+            print 'url5 is',url5
+            data_post5={
+                'encrypt':'0',
+                'extra':sekey,
+                'fid_list':fid_list,
+                'product':'share',
+                'primaryid':share_id,
+                'uk':share_uk,
+                'vcode_input':'',
+                'vcode_str':''
+                }
+            data_post5_encode=urllib.urlencode(data_post5)
+            while True:
+                print 'data_post5',data_post5
+                req5=urllib2.Request(url5,data_post5_encode)
                 returned_info=first_opener.open(req5).read()
-                for item in cookie:
-                    print 'Name = '+item.name
-                    print 'Value = '+item.value
+
                 print returned_info
                 returned_jsoninfo=json.loads(returned_info)
-                print '返回值',returned_jsoninfo
+                print '返回值5',returned_jsoninfo
                 if returned_jsoninfo['errno']==0:
-                    download_link=returned_jsoninfo[u'dlink']
+                    download_link=returned_jsoninfo[u'list'][0][u'dlink']
                     print 'dlink is',download_link
+                    break
+                elif returned_jsoninfo['errno']==-20 or returned_jsoninfo['errno']==2:
+                    #获取vcode image
+                    #http://pan.baidu.com/api/getcaptcha?prod=shareverify&web=1&t=0.5653103908215448&channel=chunlei&clienttype=0&web=1
+                    url6=u'http://pan.baidu.com/api/getcaptcha?'
+                    data_get_req6={
+                        'prod':'shareverify',
+                        }
+                    if bdstoken:
+                        data_get_req6['bdstoken']=bdstoken
+                    data_get_req6_encode=urllib.urlencode(data_get_req6)
+                    url6+=data_get_req6_encode
+                    print 'url6 is',url6
+                    req6=urllib2.Request(url6)
+                    returned_jsoninfo=json.loads(first_opener.open(req6).read())
+                    errno=returned_jsoninfo['errno']
+                    print errno
+                    if errno==0:
+                        vcode_str=returned_jsoninfo['vcode_str']
+                        print vcode_str
+                        vcode_img_url=returned_jsoninfo['vcode_img']
+                        print vcode_img_url
+
+                        url7=vcode_img_url
+                        req7=urllib2.Request(url7)
+                        imgdata=first_opener.open(req7).read()
+                        img_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), u'vcode.jpg')
+                        with open(img_path, mode='wb') as fp:
+                            fp.write(imgdata)
+                        print("Saved verification code to ", os.path.dirname(os.path.abspath(__file__)))
+                        #输入vcode
+                        the_gui.input_vcode(u'vcode.jpg')
+                        vcode_text=the_gui.global_vcode
+                        print vcode_text
+                        #更新data_post5
+                        data_post5['vcode_input']=vcode_text
+                        data_post5['vcode_str']=vcode_str
+                        data_post5_encode=urllib.urlencode(data_post5)
+                        #传输验证
+                        #data_post8={'pwd':baiduwp_passwd,'vcode':vcode_text,'vcode_str':vcode_str}
+                        #data_post8_encode=urllib.urlencode(data_post8)
+                        #print data_post8_encode
+                        #url8="{0}&t={1}&".format(referer2.replace('init','verify'),str(int(time())))
+                        #print url8
+                        #req8=urllib2.Request(url8,data_post8_encode)
+                        #jsonmsg=json.loads(first_opener.open(req8).read())
+                        #errno=jsonmsg['errno']
+                        #print errno
+                        
+                        #继续循环
+                        continue
+                    else:
+                        raise UnknowError
+                    
                 else:
                     print 'errno is',returned_jsoninfo['errno']
+                    raise UnknowError
     #step 2：是否需要处理cookie
     #进入下一级目录
 
     #step 3：需要了解js是怎么动作的，因为链接不是直接在页面中而是动态生产的
     #获取待下载zip文件的链接
-
+    print '我们获得了下载链接',download_link
     #step 4
     #使用wget下载zip文件
     #这一步也需要使用cookie
+    commandline='wget --cookies=on --load-cookies=cookie.txt --keep-session-cookies --save-cookies=cookies.txt '+\
+                 ' --referer='+referer2+'  '+download_link+'  '+'-O '+ zipped_filename
+    args=shlex.split(commandline)
+    subprocess.check_call(args)
+    
+    
+def yanzhengmashuru(first_opener,baiduwp_passwd,referer2):
+    #获取vcode image
+    #http://pan.baidu.com/api/getcaptcha?prod=shareverify&web=1&t=0.5653103908215448&channel=chunlei&clienttype=0&web=1
+    url6=u'http://pan.baidu.com/api/getcaptcha?'
+    data_get_req6={
+        'prod':'shareverify',
+        }
+    if bdstoken:
+        data_get_req6['bdstoken']=bdstoken
+    data_get_req6_encode=urllib.urlencode(data_get_req6)
+    url6+=data_get_req6_encode
+    print 'url6 is',url6
+    req6=urllib2.Request(url6)
+    returned_jsoninfo=json.loads(first_opener.open(req6).read())
+    errno=returned_jsoninfo['errno']
+    print errno
+    if errno==0:
+        vcode_str=returned_jsoninfo['vcode_str']
+        print vcode_str
+        vcode_img_url=returned_jsoninfo['vcode_img']
+        print vcode_img_url
+
+        url7=vcode_img_url
+        req7=urllib2.Request(url7)
+        imgdata=first_opener.open(req7).read()
+        img_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'vcode.jpg')
+        with open(img_path, mode='wb') as fp:
+            fp.write(imgdata)
+        print("Saved verification code to ", os.path.dirname(os.path.abspath(__file__)))
+        #输入vcode
+        the_gui.input_vcode()
+        vcode_text=the_gui.global_vcode
+        #传输验证
+        data_post8={'pwd':baiduwp_passwd,'vcode':vcode_text,'vcode_str':vcode_str}
+        data_post8_encode=urllib.urlencode(data_post8)
+        print data_post8_encode
+        url8="{0}&t={1}&".format(referer2.replace('init','verify'),str(int(time())))
+        print url8
+        req8=urllib2.Request(url8,data_post8_encode)
+        jsonmsg=json.loads(first_opener.open(req8).read())
+        errno=jsonmsg['errno']
+        print errno
+        return errno
+        
+class UnknowError(Exception):
+    pass
 
 if __name__=='__main__':
     baiduwp_address,baiduwp_passwd,hosts_dir_name=\
@@ -279,4 +380,4 @@ if __name__=='__main__':
                                                     'hsmi',\
                                                     '20160311-v3'
     #baiduwp_address='http://pan.baidu.com'
-    download_hosts_zip_file(baiduwp_address,baiduwp_passwd,hosts_dir_name)
+    download_hosts_zip_file(baiduwp_address,baiduwp_passwd,None)
