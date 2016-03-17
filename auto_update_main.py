@@ -15,17 +15,17 @@ import unzip_hosts_zip_file
 
 (origin_hostsfile_update_date,origin_hostsfile_update_version)=('',0)
 def main():
-   (origin_hostsfile_update_date,origin_hostsfile_update_version)=\
-     get_hosts_info_from_config_file()
+    (origin_hostsfile_update_date,origin_hostsfile_update_version)=\
+     privateutil.get_hosts_info_from_config_file()
 
     if is_google_connect.is_google_connected()==False:
-        if is_goole_connect.is_network_connected()==True:
+        if is_google_connect.is_network_connected()==True:
             #看来是hosts文件需要更新了
             
             (baiduwp_address,baiduwp_passwd,hosts_dir_name,\
              zipfile_passwd,hostsfile_update_date,\
              hostsfile_update_version)=\
-             get_hosts_file_info.get_remote_hosts_file_info(privateutil.get_hosts_url)
+             get_hosts_file_info.get_remote_hosts_file_info(privateutil.get_hosts_urls())
 
             if baiduwp_address!='':
                 #获取成功
@@ -65,13 +65,10 @@ def main():
                 raise Get_RemoteHosts_Fileinfo_Failed
         else:
             #网络链接本身有问题
+           print '网络链接本身有问题'
     else:
         #Google是好的
         print 'Google is OK'
-
-
-
-
 
 class Update_Hostsfile_Failed(Exception):
     pass

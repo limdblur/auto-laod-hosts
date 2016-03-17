@@ -22,7 +22,7 @@ url的结构是这样的：
 协议://授权/路径;参数?连接符#拆分文档中的特殊锚
 '''
     
-def get_hosts_file_info(hosts_address):
+def get_remote_hosts_file_info(hosts_address):
     (baiduwp_address,baiduwp_passwd,hosts_dir_name,\
     zipfile_passwd,hostsfile_update_date,hostsfile_update_version) =('','','','','',0)
     try:
