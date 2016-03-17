@@ -124,6 +124,7 @@ def download_hosts_zip_file(baiduwp_address,baiduwp_passwd,hosts_dir_name):
         first_opener.open(req)
     except Exception,e:
         print e
+        
     for item in cookie:
         print 'Name = '+item.name
         print 'Value = '+item.value
@@ -324,8 +325,12 @@ def download_hosts_zip_file(baiduwp_address,baiduwp_passwd,hosts_dir_name):
     commandline='wget --cookies=on --load-cookies=cookie.txt --keep-session-cookies --save-cookies=cookies.txt '+\
                  ' --referer='+referer2+'  '+download_link+'  '+'-O '+ zipped_filename
     args=shlex.split(commandline)
-    subprocess.check_call(args)
-    
+    result=subprocess.check_call(args)
+    print 'wget result is',result
+    if result==0:
+        return True
+    else:
+        return False
     
 def yanzhengmashuru(first_opener,baiduwp_passwd,referer2):
     #获取vcode image
