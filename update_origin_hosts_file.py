@@ -21,13 +21,15 @@ def update_origin_hosts_file():
     #测试ADDITIONHOSTS是否存在
     commandline='ls '+ADDITIONHOSTS
     args=shlex.split(commandline)
-    result=subprocess.check_call(args)
-    if result==False:
+    try:
+        result=subprocess.check_call(args)
+    except Exception,e:
+        print ADDITIONHOSTS+'文件不存在！'
         commandline='touch '+ADDITIONHOSTS
         args=shlex.split(commandline)
-        subprocess.check_call(args)        
+        subprocess.check_call(args) 
     #覆盖
-    commandline='cat '+ADDITIONHOSTS+' hosts '+' > /etc/hosts'
+    commandline='cat '+ADDITIONHOSTS+' hosts '+' | tee /etc/hosts'
     args=shlex.split(commandline)
     try:
         result=subprocess.check_call(args)
