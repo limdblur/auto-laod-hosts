@@ -4,7 +4,7 @@ import subprocess
 import shlex
 import privateutil
 ORIGINHOSTS=u'/etc/hosts'
-
+ADDITIONHOSTS=u'/etc/addition_hosts'
 
 
 def update_origin_hosts_file():
@@ -18,8 +18,16 @@ def update_origin_hosts_file():
         print '执行备份失败',e
         return False
 
+    #测试ADDITIONHOSTS是否存在
+    commandline='ls '+ADDITIONHOSTS
+    args=shlex.split(commandline)
+    result=subprocess.check_call(args)
+    if result==False:
+        commandline='touch '+ADDITIONHOSTS
+        args=shlex.split(commandline)
+        subprocess.check_call(args)        
     #覆盖
-    commandline='cp hosts /etc/hosts'
+    commandline='cat '+ADDITIONHOSTS+' hosts '+' > /etc/hosts'
     args=shlex.split(commandline)
     try:
         result=subprocess.check_call(args)
