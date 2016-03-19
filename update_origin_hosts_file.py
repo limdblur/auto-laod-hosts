@@ -29,8 +29,9 @@ def update_origin_hosts_file():
         args=shlex.split(commandline)
         subprocess.check_call(args) 
     #覆盖
-    commandline='cat '+ADDITIONHOSTS+' hosts '+' | tee /etc/hosts'
+    commandline='sh -c "cat '+ADDITIONHOSTS+' hosts '+' > /etc/hosts"'
     args=shlex.split(commandline)
+    print args
     try:
         result=subprocess.check_call(args)
     except Exception,e:
