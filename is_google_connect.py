@@ -54,7 +54,7 @@ def urlopen_test(host):
     first_opener = urllib2.build_opener(handler)
     first_opener.addheaders = headers
     try:
-        result=first_opener.open(req,timeout=5) #5s超时
+        result=first_opener.open(req,timeout=60) #60s超时
         if result.read()!=None:
             return True
     except Exception,e:
