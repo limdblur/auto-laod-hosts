@@ -3,6 +3,11 @@
 
 import subprocess
 import shlex
+import urllib2
+import urllib
+import cookielib
+import urlparse
+
 '''
 ping 太底层了，或许应该更加对症下药的测试HTTP request的连通性
 Ping usage:
@@ -33,8 +38,32 @@ def ping_test(host):
         #print "Failed to get the host: %s." %host
         return False
 
+def urlopen_test(host):
+    headers = [('Host',host),
+    ('Connection', 'keep-alive'),
+    ('Accept', 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8'),
+    ('User-Agent', 'Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:45.0) Gecko/20100101 Firefox/45.0'),
+    #('Accept-Encoding','gzip,deflate'), 
+    ('Accept-Language', 'en-US,en;q=0.5')]
+
+    #声明一个MozillaCookieJar对象实例来保存cookie
+    cookie=cookielib.MozillaCookieJar()
+    handler=urllib2.HTTPCookieProcessor(cookie)
+    
+    req=urllib2.Request(u'https://'+host)
+    first_opener = urllib2.build_opener(handler)
+    first_opener.addheaders = headers
+    try:
+        result=first_opener.open(req,timeout=5) #5s超时
+        if result.read()!=None:
+            return True
+    except Exception,e:
+        print e
+        return False
+    
 def is_network_connected():
-    result=ping_test(BAIDUHOST)
+    #result=ping_test(BAIDUHOST)
+    result=urlopen_test(BAIDUHOST)
     if result:
         print '百度可以连接上，说明网络是连通的'
     else:
@@ -43,7 +72,8 @@ def is_network_connected():
     return result
 
 def is_google_connected():
-    result=ping_test(GOOGLEHOST)
+    #result=ping_test(GOOGLEHOST)
+    result=urlopen_test(GOOGLEHOST)
     if result:
         print 'Google可以连接上'
     else:
@@ -55,4 +85,5 @@ def is_google_connected():
 if __name__=='__main__':
     is_network_connected()
     is_google_connected()
+    #urlopen_test(u'www.facebook.com')
     pass
