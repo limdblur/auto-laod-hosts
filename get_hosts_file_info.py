@@ -50,7 +50,10 @@ def get_remote_hosts_file_info(hosts_address):
                             date_list=re.findall(re_num,href.get_text())
                             print date_list
                             hostsfile_update_date=date_list[0]
-                            hostsfile_update_version=int(date_list[1])
+                            if len(date_list)!=1:
+                                hostsfile_update_version=int(date_list[1])
+                            else:
+                                hostsfile_update_version=0
                             #print hostsfile_update_date
                     break
     except Exception,e:

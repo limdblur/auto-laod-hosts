@@ -30,7 +30,7 @@ class ShareInfo(object):
     pattern = re.compile('yunData\.(\w+\s=\s"\w+");')
     filename_pattern = re.compile('"server_filename":"([^"]+)"', re.DOTALL)
     fileinfo_pattern = re.compile('yunData\.FILEINFO\s=\s(.*);')
-
+    sekey_pattern = re.compile(r'"sekey":"([a-zA-Z0-9\\/=]+)"')
     def __init__(self):
         self.share_id = None
         self.bdstoken = None
@@ -52,6 +52,11 @@ class ShareInfo(object):
     def match(self, js):
         _filename = re.search(self.filename_pattern, js)
         _fileinfo = re.search(self.fileinfo_pattern, js)
+        _sekey=re.search(self.sekey_pattern,js)
+        if _sekey!=None:
+            self.sekey=_sekey.group(1)
+        else:
+            print 'get sekey failed'
         if _filename:
             self.filename = _filename.group(1).decode('unicode_escape')
         if _fileinfo:
@@ -183,7 +188,7 @@ def download_hosts_zip_file(baiduwp_address,baiduwp_passwd,hosts_dir_name):
         raise UnknowError        
 
     js = _get_js(first_opener,baiduwp_address, baiduwp_passwd)
-    #print js
+    print js
 
     info=ShareInfo()
     if info.match(js):
@@ -212,8 +217,10 @@ def download_hosts_zip_file(baiduwp_address,baiduwp_passwd,hosts_dir_name):
             share_uk=info.uk
             sign=info.sign
             print 'sign is',sign
-            sekey=info.sekey #暂时为None
-            sekey='{"sekey":"%s"}' % (url_unquote(u'f9ciJq7HsoXeVjfiJjgrYn%2FppjvK7p8uETVQzEZBfxQ%3D'))
+            #sekey=info.sekey #暂时为None
+            #sekey=None
+            #sekey='{"sekey":"%s"}' % (url_unquote(u'f9ciJq7HsoXeVjfiJjgrYn%2FppjvK7p8uETVQzEZBfxQ%3D'f9ciJq7HsoV2p731GrHYEj2fbxPdoT8A7Mozy\/PLq9s))
+            sekey='{"sekey":"%s"}' % (url_unquote(info.sekey))
             timestamp=info.timestamp
             bdstoken=info.bdstoken
 

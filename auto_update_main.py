@@ -14,11 +14,10 @@ import unzip_hosts_zip_file
  hostsfile_update_version) =('','','','','',0)
 
 (origin_hostsfile_update_date,origin_hostsfile_update_version)=('',0)
-def main():
+def main(forced):
     (origin_hostsfile_update_date,origin_hostsfile_update_version)=\
      privateutil.get_hosts_info_from_config_file()
-
-    if is_google_connect.is_google_connected()==False:
+    if is_google_connect.is_google_connected()==False or forced==True:
         if is_google_connect.is_network_connected()==True:
             #看来是hosts文件需要更新了
             
@@ -26,13 +25,16 @@ def main():
              zipfile_passwd,hostsfile_update_date,\
              hostsfile_update_version)=\
              get_hosts_file_info.get_remote_hosts_file_info(privateutil.get_hosts_urls())
+            print baiduwp_address,baiduwp_passwd,hosts_dir_name,\
+             zipfile_passwd,hostsfile_update_date,\
+             hostsfile_update_version
            # (baiduwp_address,baiduwp_passwd,hosts_dir_name,\
             # zipfile_passwd,hostsfile_update_date,\
             # hostsfile_update_version)=('http://pan.baidu.com/s/1nu0OV3N','hsmi','20160311-v3','zuile','20160311',3)
             if baiduwp_address!='':
                 #获取成功
                 if int(hostsfile_update_date)>int(origin_hostsfile_update_date) or\
-                   int(hostsfile_update_version)>int(origin_hostsfile_update_version):
+                   int(hostsfile_update_version)>int(origin_hostsfile_update_version) or forced==True:
                     #需要下载新的文件
                     result_down_zip=download_hosts_zip_file.download_hosts_zip_file(baiduwp_address,baiduwp_passwd,None)
                     if result_down_zip==True:
@@ -88,4 +90,13 @@ class Get_RemoteHosts_Fileinfo_Failed(Exception):
     pass
 
 if __name__=='__main__':
-    main()
+    print sys.argv
+    forced=False
+    if len(sys.argv)>1:
+        if sys.argv[1]=='forced':
+            forced=True
+        else:
+            forced=False
+    else:
+        forced=False
+    main(forced)
