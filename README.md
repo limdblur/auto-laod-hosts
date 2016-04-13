@@ -30,6 +30,8 @@
   
   ./run.sh #可能会有窗口弹出要求输入验证码
   
+  使用./run.sh forced可进行强制升级
+  
 3 致谢
 
   感谢Github项目 pan-baidu-download
