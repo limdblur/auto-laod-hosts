@@ -30,7 +30,7 @@ class ShareInfo(object):
     pattern = re.compile('yunData\.(\w+\s=\s"\w+");')
     filename_pattern = re.compile('"server_filename":"([^"]+)"', re.DOTALL)
     fileinfo_pattern = re.compile('yunData\.FILEINFO\s=\s(.*);')
-    sekey_pattern = re.compile(r'"sekey":"([a-zA-Z0-9\\/=]+)"')
+    sekey_pattern = re.compile(r'"sekey":"([a-zA-Z0-9\\/=\+]+)"')
     def __init__(self):
         self.share_id = None
         self.bdstoken = None
