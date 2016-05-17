@@ -6,7 +6,7 @@
 
   python 2.7 [from official site]
   
-    sudo -H pip install bs4 requests
+    sudo -H pip install bs4 requests lxml
   
   git, wget, Pillow module installation:
   
