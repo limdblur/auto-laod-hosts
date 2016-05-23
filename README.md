@@ -20,7 +20,7 @@
   
   Ubuntu
   
-  sudo apt-get install python-PIL python-pil python-imaging python-pil.imagetk wget git
+  sudo apt-get install python-pil python-imaging python-pil.imagetk wget git
   
 2 下载&&运行
   
