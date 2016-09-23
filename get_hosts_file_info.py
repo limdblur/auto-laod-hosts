@@ -38,10 +38,14 @@ def get_remote_hosts_file_info(hosts_address):
         #print soup_re.find_all('p')
         for tagsobjects in soup_re.find_all('p'):
             strings=tagsobjects.get_text() #这里默认的是ascii编码
+            print strings
             result=strings.find(u'百度网盘')
             if result!=-1:
                 if strings.find(u'提取码')!=-1:
-                    strings_we_want = strings.split(u'腾讯微云')[0]
+                    strings_we_want_lists = strings.split(u'腾讯微云')
+                    if len(strings_we_want_lists)<2:
+                        strings_we_want_lists = strings.split(u'360云盘') #增加360云盘标志
+                    strings_we_want=strings_we_want_lists[0]
                     print strings,result
                     for href in tagsobjects.find_all('a'):
                         if href['href'].find('baidu')!=-1:

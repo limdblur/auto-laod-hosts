@@ -27,7 +27,8 @@ sys.setdefaultencoding('utf-8') #http://wangye.org/blog/archives/629/
 
 DLTYPE_MULTIPLE = u'multi_file'
 class ShareInfo(object):
-    pattern = re.compile('yunData\.(\w+\s=\s"\w+");')
+    #pattern = re.compile('yunData\.(\w+\s=\s"\w+");')
+    pattern = re.compile('yunData\.setData\((.*)\);')
     filename_pattern = re.compile('"server_filename":"([^"]+)"', re.DOTALL)
     fileinfo_pattern = re.compile('yunData\.FILEINFO\s=\s(.*);')
     sekey_pattern = re.compile(r'"sekey":"([a-zA-Z0-9\\/=\+]+)"')
@@ -35,6 +36,7 @@ class ShareInfo(object):
         self.share_id = None
         self.bdstoken = None
         self.uk = None
+        self.owner_uk = None
         self.bduss = None
         self.fid_list = None
         self.sign = None
@@ -43,45 +45,38 @@ class ShareInfo(object):
         self.sharepagetype = None
         self.fileinfo = None
         self.sekey=None
+        self.isDir=None
+        self.cid=None
     def __call__(self, js):
         return self.match(js)
 
     def __repr__(self):
         return '<ShareInfo %r>' % self.share_id
 
-    def match(self, js):
-        _filename = re.search(self.filename_pattern, js)
-        _fileinfo = re.search(self.fileinfo_pattern, js)
-        _sekey=re.search(self.sekey_pattern,js)
-        if _sekey!=None:
-            self.sekey=_sekey.group(1)
-        else:
-            print 'get sekey failed'
-        if _filename:
-            self.filename = _filename.group(1).decode('unicode_escape')
-        if _fileinfo:
-            self.fileinfo = json.loads(_fileinfo.group(1).decode('unicode_escape'))
-        data = re.findall(self.pattern, js)
+    def match(self, js): #企业云的信息获取20160923
+        data = re.search(self.pattern,js)
+        print data
         if not data:
+            print 'what the fuck!!!'
             return False
-        yun_data = dict([i.split(' = ', 1) for i in data])
-        #logger.debug(yun_data, extra={'method': 'GET', 'type': 'javascript'})
-        #if 'single' not in yun_data.get('SHAREPAGETYPE') or '0' in yun_data.get('LOGINSTATUS'):
-        #    return False
-        self.uk = yun_data.get('SHARE_UK').strip('"')
-        # self.bduss = yun_data.get('MYBDUSS').strip('"')
-        self.share_id = yun_data.get('SHARE_ID').strip('"')
-        self.fid_list = json.dumps([i['fs_id'] for i in self.fileinfo])
-        self.sign = yun_data.get('SIGN').strip('"')
-        if yun_data.get('MYBDSTOKEN'):
-            self.bdstoken = yun_data.get('MYBDSTOKEN').strip('"')
-        self.timestamp = yun_data.get('TIMESTAMP').strip('"')
-        self.sharepagetype = yun_data.get('SHAREPAGETYPE').strip('"')
-        if self.sharepagetype == DLTYPE_MULTIPLE:
-            self.filename = os.path.splitext(self.filename)[0] + '-batch.zip'
-        #if self.bdstoken:
-        #    return True
-        self.fileinfo=self.fileinfo[0]
+        
+        yun_data = json.loads(data.group(1).decode('unicode_escape'))
+        sharelinkMeta = yun_data[u'sharelinkMeta']
+
+        
+        self.uk = sharelinkMeta[u'uk']
+        self.owner_uk = sharelinkMeta[u'owner_uk']
+        self.share_id = sharelinkMeta[u'sid'].strip('"')
+        self.cid = yun_data[u'cid']
+        print 'Test',self.cid
+        self.fid_list = sharelinkMeta[u'fs_id']
+        self.sign = yun_data[u'sign'].strip('"')
+        if yun_data[u'bdstoken']:
+            self.bdstoken = yun_data[u'bdstoken'].strip('"')
+        self.timestamp = yun_data[u'timestamp']
+        self.isDir = sharelinkMeta[u'isdir']
+        self.fileinfo = sharelinkMeta
+        
         return True
 
 def _get_js(opener,link, secret=None):
@@ -152,6 +147,7 @@ def download_hosts_zip_file(baiduwp_address,baiduwp_passwd,hosts_dir_name):
     #req2=urllib2.Request(referer2)
     #输入提取码
     url2='http://pcs.baidu.com/rest/2.0/pcs/file?method=plantcookie&type=ett'
+    #url2='https://eyun.baidu.com/enterprise/share/verify?'
     req2=urllib2.Request(url2)
     #first_opener.addheaders = headers
     first_opener.open(req2)
@@ -169,7 +165,8 @@ def download_hosts_zip_file(baiduwp_address,baiduwp_passwd,hosts_dir_name):
     jsonmsg=json.loads(first_opener.open(req3).read())
     cookie.save(ignore_discard=True,ignore_expires=True)
 
-    print jsonmsg,type(jsonmsg) #got request_id
+        
+    print 'url3',jsonmsg,type(jsonmsg) #got request_id
     errno=jsonmsg['errno']
     if errno == -63:
         print '提取密码遇到要输入验证码'
@@ -193,34 +190,48 @@ def download_hosts_zip_file(baiduwp_address,baiduwp_passwd,hosts_dir_name):
     info=ShareInfo()
     if info.match(js):
         print info.filename
-        if info.sharepagetype == DLTYPE_MULTIPLE:
+        if info.isDir == 1:
             print info.fileinfo
             dirname=info.fileinfo[u'path']
             print dirname
-        url4="{0}&".format(referer2.replace('init','list')) #返回目录下的文件列表
+        url4="{0}&t={1}&".format(referer2.replace('init','info'),str(int(time()))) #返回目录下的文件列表
         data_get_req={
-            'dir':dirname,
-            'page':1
+            'path':dirname,
+            'page':1,
+            'owner_uk':info.owner_uk #获取目录是必须要加上这一项 20160923
             }
         data_get_req_encode=urllib.urlencode(data_get_req)
         url4+=data_get_req_encode
         print 'url4 is',url4
         req4=urllib2.Request(url4)
         returned_filelistinfo=json.loads(first_opener.open(req4).read())
+        print returned_filelistinfo
 
         errno=returned_filelistinfo[u'errno']
         zipped_filename=privateutil.get_the_zipped_hosts_filename() #获取对应系统平台的文件名字
         print zipped_filename
         if errno==0:
+            print 'get file list succeed'
             #get SHARE_ID,SEKEY,SIGN,SHARE_UK
             share_id=info.share_id
             share_uk=info.uk
             sign=info.sign
             print 'sign is',sign
             #sekey=info.sekey #暂时为None
-            #sekey=None
+            #sekey='jwZxIm3TNwzB2V54ZFL5iBAhj%2FeFvjaqMUn0HGJJUs%2F7r0X9hSmNAO5Tn2EJWpwaj7ibHMZq02k%3D'
             #sekey='{"sekey":"%s"}' % (url_unquote(u'f9ciJq7HsoXeVjfiJjgrYn%2FppjvK7p8uETVQzEZBfxQ%3D'f9ciJq7HsoV2p731GrHYEj2fbxPdoT8A7Mozy\/PLq9s))
-            sekey='{"sekey":"%s"}' % (url_unquote(info.sekey))
+            #sekey='{"sekey":"%s"}' % (url_unquote(info.sekey))
+            for item in cookie:
+                print 'Name = '+item.name
+                print type(item.name)
+                print 'Value = '+item.value
+                print type(item.value)
+            
+                if item.name=='BDCLND':
+                    #sekey = url_unquote(item.value)
+                    sekey = item.value
+                    print "kkkk"
+            print 'sekey is',sekey  #企业云获得sekey的方式
             timestamp=info.timestamp
             bdstoken=info.bdstoken
 
@@ -231,29 +242,32 @@ def download_hosts_zip_file(baiduwp_address,baiduwp_passwd,hosts_dir_name):
                 if eachfileinfo['server_filename']==zipped_filename:
                     fid_list=[eachfileinfo['fs_id']]
                     print 'fid_list is',fid_list
-            url5='http://pan.baidu.com/api/sharedownload?'
+			#url5='http://pan.baidu.com/api/sharedownload?'
+            url5='http://eyun.baidu.com/api/sharedownload?'
             data_get_req5={
                 'sign':sign,
                 'timestamp':timestamp,
                 'bdstoken':bdstoken,
+                'cid':info.cid,
+                'web':1,
+                'clienttype':12
                 }
             data_get_req5_encode=urllib.urlencode(data_get_req5)
             print 'data_get',data_get_req5
             url5+=data_get_req5_encode
             print 'url5 is',url5
+            extra='{"sekey":"%s","cid":"%s"}' % (url_unquote(sekey),url_unquote(info.cid))
             data_post5={
-                'encrypt':'0',
-                'extra':sekey,
+                'encrypt':int('0'),
+                'extra':extra,
                 'fid_list':fid_list,
-                'product':'share',
-                'primaryid':share_id,
+                'product':"enterprise".strip('"'),
+                'primaryid':int(share_id),
                 'uk':share_uk,
-                'vcode_input':'',
-                'vcode_str':''
                 }
             data_post5_encode=urllib.urlencode(data_post5)
             while True:
-                print 'data_post5',data_post5
+                print 'data_post5',data_post5_encode
                 req5=urllib2.Request(url5,data_post5_encode)
                 returned_info=first_opener.open(req5).read()
 
@@ -267,7 +281,8 @@ def download_hosts_zip_file(baiduwp_address,baiduwp_passwd,hosts_dir_name):
                 elif returned_jsoninfo['errno']==-20 or returned_jsoninfo['errno']==2:
                     #获取vcode image
                     #http://pan.baidu.com/api/getcaptcha?prod=shareverify&web=1&t=0.5653103908215448&channel=chunlei&clienttype=0&web=1
-                    url6=u'http://pan.baidu.com/api/getcaptcha?'
+                    #url6=u'http://pan.baidu.com/api/getcaptcha?'
+                    url6=u'http://eyun.baidu.com/api/getcaptcha?'
                     data_get_req6={
                         'prod':'shareverify',
                         }
@@ -320,9 +335,13 @@ def download_hosts_zip_file(baiduwp_address,baiduwp_passwd,hosts_dir_name):
                 else:
                     print 'errno is',returned_jsoninfo['errno']
                     raise UnknowError
+        else:
+            print 'url 4 errno is',errno
+            raise UnknowError        
     #step 2：是否需要处理cookie
     #进入下一级目录
-
+    else:
+        print "Match failed!!!!"
     #step 3：需要了解js是怎么动作的，因为链接不是直接在页面中而是动态生产的
     #获取待下载zip文件的链接
     print '我们获得了下载链接',download_link
@@ -342,7 +361,8 @@ def download_hosts_zip_file(baiduwp_address,baiduwp_passwd,hosts_dir_name):
 def yanzhengmashuru(first_opener,baiduwp_passwd,referer2):
     #获取vcode image
     #http://pan.baidu.com/api/getcaptcha?prod=shareverify&web=1&t=0.5653103908215448&channel=chunlei&clienttype=0&web=1
-    url6=u'http://pan.baidu.com/api/getcaptcha?'
+    #url6=u'http://pan.baidu.com/api/getcaptcha?'
+    url6=u'http://eyun.baidu.com/api/getcaptcha?'
     data_get_req6={
         'prod':'shareverify',
         }
