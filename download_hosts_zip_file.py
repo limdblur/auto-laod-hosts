@@ -348,7 +348,7 @@ def download_hosts_zip_file(baiduwp_address,baiduwp_passwd,hosts_dir_name):
     #step 4
     #使用wget下载zip文件
     #这一步也需要使用cookie
-    commandline='wget --cookies=on --load-cookies=cookie.txt --keep-session-cookies --save-cookies=cookies.txt '+\
+    commandline='wget --cookies=on --load-cookies=cookies.txt --keep-session-cookies --save-cookies=cookies.txt '+\
                  ' --referer='+referer2+'  '+download_link+'  '+'-O '+ zipped_filename
     args=shlex.split(commandline)
     result=subprocess.check_call(args)
