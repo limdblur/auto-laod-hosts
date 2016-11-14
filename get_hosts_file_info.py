@@ -45,6 +45,8 @@ def get_remote_hosts_file_info(hosts_address):
                     strings_we_want_lists = strings.split(u'腾讯微云')
                     if len(strings_we_want_lists)<2:
                         strings_we_want_lists = strings.split(u'360云盘') #增加360云盘标志
+                        if len(strings_we_want_lists)<2:
+                            strings_we_want_lists = strings.split(u'微云网盘') #增加360云盘标志
                     strings_we_want=strings_we_want_lists[0]
                     print strings,result
                     for href in tagsobjects.find_all('a'):
